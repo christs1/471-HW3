@@ -1,0 +1,209 @@
+# Instructions:
+# 1. Type your response to each question below the question's heading;
+#    i.e., write question 1's response below "** Question 1:"
+# 2. Do not modify this template;
+#    this may result in your submission not being graded and a score of 0.
+# 3. Do not change the file type of this file; i.e., do not change to rich text,
+#    a Word document, PDF, etc.  You will submit this text file, as a .txt file,
+#    on Canvas for this homework assignment.
+
+** Question 1:
+
+    Christian Rodriguez
+
+** Question 2:
+import socket
+import threading
+
+
+
+msg_logs = []
+client_list = {}
+
+def client_thread(c_socket, addr):
+    ip, port = addr
+    client_id = ip, port
+    
+    # Store client socket in the client list
+    client_list[client_id] = c_socket
+
+    # Notify all other clients about new connections
+    connect_msg = f"Client {ip} connected.\n"
+    print(connect_msg.strip())
+    for other_id, other_sock in client_list.items():
+        if other_id != client_id:
+            try:
+                other_sock.sendall(connect_msg.encode('utf-8'))
+            except:
+                pass
+
+    # Send existing message logs to new client
+    if msg_logs:
+        print("The server sent the message log to this client\n")
+        msg_history = "Client received message log: \n" + "\n".join(msg_logs)
+        c_socket.sendall(msg_history.encode('utf-8'))
+    else:
+        print("The server has no message log to send to this client")
+        c_socket.sendall("No previous message history.\n".encode('utf-8'))
+
+    # Send list of connected clients
+    is_connected = "Currently connected clients:\n"
+    for client in client_list:
+        is_connected += f"{client[0]}:{client[1]}\n"
+    c_socket.sendall(is_connected.encode('utf-8'))
+
+
+    # Handle messages from the client
+    while True:
+        data = c_socket.recv(1024)
+        if not data:
+            # Notify all other clients about the disconnection
+            disconnect_msg = f"Client {ip} has disconnected.\n"
+            print(disconnect_msg.strip())
+            for other_id, other_sock in client_list.items():
+                if other_id != client_id:
+                    try:
+                        other_sock.sendall(disconnect_msg.encode('utf-8'))
+                    except:
+                        pass
+            break
+        message = data.decode('utf-8').strip()
+        if not message:
+            continue
+
+        response = "Client sending message: " + '"' + message + '"\n'
+        c_socket.sendall(response.encode('utf-8'))   
+
+        client_msg = f"{client_id[0]}: {message}"
+        print(f"Client {ip} sent: {message}")
+        msg_logs.append(client_msg)
+
+        # Broadcast the message to all other clients
+        broadcast_msg = f"{ip}: {message}\n"
+        for other_id, other_sock in client_list.items():
+            if other_id != client_id:
+                try:
+                    other_sock.sendall(broadcast_msg.encode('utf-8'))
+                except:
+                    pass
+
+    # Remove client from client_list after disconnect
+    if client_id in client_list:
+        del client_list[client_id]
+    c_socket.close()
+
+def main():
+    server_socket = socket.socket()
+    host = '127.0.0.1'
+    port = 12345
+    server_socket.bind((host, port))
+    server_socket.listen(5)
+    print(f"% echo_server {port}")
+    print(f"Server is at adfdress: {host}\nServer is using port: {port}\n")
+
+    while True:
+        c_socket, client_address = server_socket.accept()
+        print(f"The client at {client_address} has connected to the server")
+        client_handler = threading.Thread(target=client_thread, args=(c_socket, client_address))
+        client_handler.start()
+
+if __name__ == "__main__":
+    main()
+
+Resource #1 -> https://discuss.python.org/t/making-a-multi-thread-server-for-a-chat-room-destination-client-sockets-selection/8572/7
+Resource #2 -> https://pandeyshikha075.medium.com/building-a-chat-server-and-client-in-python-with-socket-programming-c76de52cc1d5
+Resource #3 -> https://realpython.com/python-sockets/
+
+** Question 3:
+
+import socket
+import threading
+
+def get_msg_log(c_socket):
+    while True:
+        try:
+            data = c_socket.recv(1024)
+            if not data:
+                print("\nServer closed the connection.\n")
+                break
+            response = data.decode('utf-8')
+            print(f"{response}")
+        except OSError:
+            break
+
+def main():
+    c_socket = socket.socket()
+    host = '127.0.0.1'
+    port = 12345
+    try: 
+        c_socket.connect((host, port))
+        print(f"% echo_client {host} {port}")
+        print("Client is connected to the server.")
+
+        data = c_socket.recv(1024)
+        response = data.decode('utf-8').strip()
+        if "No previous message history" in response:
+            print("No prior message log from the server.")
+            print("No other clients connected to the server.")
+        else:
+            print(response)
+
+        receive_thread = threading.Thread(target=get_msg_log, args=(c_socket,))
+        receive_thread.daemon = True
+        receive_thread.start()
+
+        while True:
+            message = input("Enter message to send to server: ")
+            if message.lower() == 'quit':
+                break
+            c_socket.sendall(message.encode('utf-8'))
+    except ConnectionRefusedError:
+        print(f"Could not connect to server at {host}:{port}.")
+    finally:
+        print("Disconnecting...")
+        c_socket.close()
+
+if __name__ == "__main__":
+    main()
+
+Resource #1 -> https://www.digitalocean.com/community/tutorials/python-socket-programming-server-client
+Resource #2 -> https://pandeyshikha075.medium.com/building-a-chat-server-and-client-in-python-with-socket-programming-c76de52cc1d5
+Resource #3 -> https://www.geeksforgeeks.org/python/simple-chat-room-using-python/
+
+
+** Question 4:
+
+Submit image to the separate Canvas submission link
+
+** Question 5:
+
+Submit image to the separate Canvas submission link
+
+** Question 6:
+
+        My code functions very well for handling multiple clients messaging on the same
+    server. The way I decided to implement this was by adding a dictionary for the client 
+    list that I used to hold the ip address and port number as a tuple called client_id,
+    then I stored socket at the index of the client_id in the client list. The client list
+    is extremely useful for handling messages between the server to multiple clients. First,
+    the server notifies the clients about currently connected clients by traversing the client_list
+    and for each client in client_list I print out their IP address and port number. Then, the
+    code continues from last assignment, then I also added functionality for sending messages to
+    other clients by checking for different ids in the client_list, and if there are any different
+    ids, then the sever knows that message is not the user who sent the message so uses sendall() 
+    to send the message to other clients. Then, once a client disconnects, their data is deleted
+    from the dictionary (client_list). One issue that I was not able to figure out is when a user
+    quits, the disconnect message is a large error message sent to the server, and I can't figure
+    out what is causing this issue.
+
+** Question 7:
+    
+        There are improvements that I made from my last submission. For one, my code in my previous
+    submission did not have functionality for client-to-client messaging. This was an oversight from
+    last assignment that I did not think about while coding. I just assumed clients were able to see
+    messages from each other. In this code, I added functionality that I explained above, which sends
+    the data to all users that are not the client who made the message. This ensures that all clients
+    no matter the number will recieve the message. The other thing I fixed is the formatting of the 
+    output, so that it looks like the assignment guidelines. The issue with the last assignment was 
+    that I was too focused on sockets and trying to use them to handle multiple clients which I was
+    not able to do, but was able to with threads. 
