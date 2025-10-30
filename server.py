@@ -91,13 +91,12 @@ def main():
         sys.exit(1)
 
     server_socket = socket.socket()
-    host = '127.0.0.1'
-    port = 12345
+    host = '0.0.0.0'
     try:
         server_socket.bind((host, port))
         server_socket.listen(5)
         print(f"% echo_server {port}")
-        print(f"Server is at adfdress: {host}\nServer is using port: {port}\n")
+        print(f"Server is at address: {host}\nServer is using port: {port}\n")
 
         while True:
             c_socket, client_address = server_socket.accept()
