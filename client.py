@@ -1,5 +1,6 @@
 import socket
 import threading
+import sys
 
 def get_msg_log(c_socket):
     while True:
@@ -14,9 +15,18 @@ def get_msg_log(c_socket):
             break
 
 def main():
+    if len(sys.argv) != 3:
+        print("Usage: python client.py <host> <port>")
+        sys.exit(1)
+    host = sys.argv[1]
+    
+    try:
+        port = int(sys.argv[2]) # Get port from command-line argument and convert to int
+    except ValueError:
+        print("Error: Port must be an integer.")
+        sys.exit(1)
+
     c_socket = socket.socket()
-    host = '127.0.0.1'
-    port = 12345
     try: 
         c_socket.connect((host, port))
         print(f"% echo_client {host} {port}")

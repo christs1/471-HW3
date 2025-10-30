@@ -1,7 +1,6 @@
 import socket
 import threading
-
-
+import sys
 
 msg_logs = []
 client_list = {}
@@ -81,19 +80,33 @@ def client_thread(c_socket, addr):
     c_socket.close()
 
 def main():
+    if len(sys.argv) != 2:
+        print("Usage: python server.py <port>")
+        sys.exit(1)
+
+    try:
+        port = int(sys.argv[1])
+    except ValueError:
+        print("Error: Port muts be an integer.")
+        sys.exit(1)
+
     server_socket = socket.socket()
     host = '127.0.0.1'
     port = 12345
-    server_socket.bind((host, port))
-    server_socket.listen(5)
-    print(f"% echo_server {port}")
-    print(f"Server is at adfdress: {host}\nServer is using port: {port}\n")
+    try:
+        server_socket.bind((host, port))
+        server_socket.listen(5)
+        print(f"% echo_server {port}")
+        print(f"Server is at adfdress: {host}\nServer is using port: {port}\n")
 
-    while True:
-        c_socket, client_address = server_socket.accept()
-        print(f"The client at {client_address} has connected to the server")
-        client_handler = threading.Thread(target=client_thread, args=(c_socket, client_address))
-        client_handler.start()
+        while True:
+            c_socket, client_address = server_socket.accept()
+            print(f"The client at {client_address} has connected to the server")
+            client_handler = threading.Thread(target=client_thread, args=(c_socket, client_address))
+            client_handler.start()
+    except OSError as e:
+        print(f"Error: {e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
